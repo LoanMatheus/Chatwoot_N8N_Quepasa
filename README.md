@@ -1,4 +1,4 @@
-## Instruções de Configuração do Projeto
+# Instruções de Configuração do Projeto
 
 Este guia fornece instruções detalhadas para configurar e executar o projeto. Certifique-se de seguir todos os passos cuidadosamente para garantir um funcionamento adequado.
 
@@ -8,7 +8,7 @@ Este guia fornece instruções detalhadas para configurar e executar o projeto. 
 Clone o repositório do projeto em seu ambiente local:
 
 ```bash
-git clone git@github.com:LoanMatheus/UPX.git
+git clone git@github.com:LoanMatheus/Chatwoot_N8N_Quepasa.git
 cd UPX
 ```
 
