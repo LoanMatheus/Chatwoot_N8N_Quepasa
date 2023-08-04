@@ -1,0 +1,151 @@
+version: '3.9'
+
+services:
+  base: &base
+    container_name: chatwoot
+    hostname: chatwoot
+    image: chatwoot/chatwoot:develop
+    env_file: .env 
+    stdin_open: true 
+    tty: true
+    volumes:
+      - ./data/.chatwoot:/app/storage
+    networks: 
+      - chatwoot-network
+  
+  postgres:
+    container_name: postgres
+    hostname: postgres
+    image: postgres:12
+    restart: always
+    environment:
+      - POSTGRES_DB=chatwoot
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=chatwoot
+    volumes:
+      - ./data/.postgres:/var/lib/postgresql/data
+    networks: 
+      - chatwoot-network
+
+  redis:
+    container_name: redis
+    hostname: redis
+    image: redis:alpine
+    restart: always
+    command: ["sh", "-c", "redis-server --requirepass \"$REDIS_PASSWORD\""]
+    env_file: .env
+    volumes:
+      - ./data/.redis:/data
+    networks: 
+      - chatwoot-network
+  
+  rails:
+    <<: *base
+    container_name: rails
+    hostname: rails
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - RAILS_ENV=production
+    entrypoint: docker/entrypoints/rails.sh
+    command: ['bundle', 'exec', 'rails', 's', '-p', '3000', '-b', '0.0.0.0']
+    volumes:
+      - ./data/.rails:/app/storage
+    networks: 
+      - chatwoot-network
+
+  sidekiq:
+    <<: *base
+    container_name: sidekiq
+    hostname: sidekiq
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - NODE_ENV=production
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+    command: ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml']
+    volumes:
+      - ./data/.sidekiq:/app/storage
+    networks: 
+      - chatwoot-network
+
+  pgadmin:
+    container_name: pgadmin4
+    hostname: pgadmin4
+    image: dpage/pgadmin4:latest
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "demo@demo.com.br"
+      PGADMIN_DEFAULT_PASSWORD: "PgAdmin2021!"
+    networks:
+      - chatwoot-network
+
+  quepasa:
+    image: quepasa
+    container_name: quepasa
+    hostname: quepasa
+    mem_limit: $QUEPASA_MEMORY_LIMIT
+    restart: always
+    stdin_open: true
+    tty: true
+    env_file: .env
+    build:
+      context: ./quepasa-main
+      dockerfile: ./docker/Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "31000:31000"
+    volumes:
+      - ./quepasa-main/src:/opt/quepasa
+    networks: 
+      - chatwoot-network
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:next
+    container_name: n8n
+    hostname: n8n
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: chatwoot
+      DB_POSTGRESDB_USER: postgres
+      DB_POSTGRESDB_PASSWORD: chatwoot
+    links:
+      - postgres
+    volumes:
+      - ./data/.n8n:/home/node/.n8n
+    networks:
+      - chatwoot-network
+
+  nginx:
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    hostname: nginx
+    entrypoint: nginx -g "daemon off;"
+    ports:
+      - "8080:8080" #chatwoot
+      - "8081:8081" #quepasa
+      - "8082:8082" #pgadmin
+      - "8083:8083" #redis
+      - "8084:8084" #n8n
+    networks: 
+      - chatwoot-network
+
+networks: 
+  chatwoot-network:
+    name: chatwoot-network
+    driver: bridge

@@ -1,0 +1,682 @@
+{
+  "name": "PostToChatwoot",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.participant?.title}}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Direct Message ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        820
+      ],
+      "id": "2983b09d-3e78-46a0-9c03-77f03847c11d"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "=**{{$json.participant.title}}**: {{$json.payload.content}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Prepend Title",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        100,
+        880
+      ],
+      "id": "5f52c153-565f-4410-9277-fb9c9e624ea9"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$json.cwhost}}/api/v1/accounts/{{$json.account}}/conversations/{{$json.conversation.id}}/messages",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={{$json.payload}}",
+        "headerParametersJson": "={ \"api_access_token\": \"{{$json.atoken}}\" }"
+      },
+      "name": "Post Incoming Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2180,
+        1040
+      ],
+      "id": "a23350ee-7404-4dbb-841d-bbb26c51a5da",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json.qphost}}",
+        "token": "={{$json.qptoken}}",
+        "operation": "download",
+        "messageId": "={{ $json.payload.content_attributes?.items?.quepasa?.msgid ?? $json.payload.echo_id }}",
+        "fileName": "={{$json[\"payload\"][\"attachment\"][\"filename\"]}}"
+      },
+      "id": "514d5518-026d-419a-95dd-3e2547a533ed",
+      "name": "Quepasa Download Incoming",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        780,
+        500
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$json.cwhost}}/api/v1/accounts/{{$json.account}}/conversations/{{$json.conversation.id}}/messages",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {
+          "bodyContentType": "multipart-form-data"
+        },
+        "sendBinaryData": true,
+        "binaryPropertyName": "attachments[]:data",
+        "headerParametersJson": "={ \"api_access_token\": \"{{$json.atoken}}\" }",
+        "queryParametersJson": "={{$json.payload}}"
+      },
+      "name": "Post Incoming Message Attachment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2180,
+        740
+      ],
+      "id": "3aa049eb-d8bc-4852-99e7-aee8b0299213",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {},
+      "id": "d44bc7d3-795f-4270-9692-fcab92323494",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "chatid",
+              "value": "={{$json.chatid}}"
+            },
+            {
+              "name": "hex",
+              "value": "={{$json.hex}}"
+            },
+            {
+              "name": "qphost",
+              "value": "={{$json.extra.qphost}}"
+            },
+            {
+              "name": "qptoken",
+              "value": "={{$json.extra.qptoken}}"
+            },
+            {
+              "name": "cwhost",
+              "value": "={{$json.extra.cwhost}}"
+            },
+            {
+              "name": "account",
+              "value": "={{$json.extra.account}}"
+            },
+            {
+              "name": "atoken",
+              "value": "={{$json.extra.atoken}}"
+            },
+            {
+              "name": "identifier",
+              "value": "={{$json.extra.identifier}}"
+            },
+            {
+              "name": "payload",
+              "value": "={{$json.payload}}"
+            },
+            {
+              "name": "conversation.id",
+              "value": "={{$json.conversation.id}}"
+            },
+            {
+              "name": "participant",
+              "value": "={{$json.participant}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fc4c50bf-1b91-4820-9530-52a4485fc3b8",
+      "name": "Filter Source Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -280,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"payload\"][\"attachment\"]}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Has Incoming Attachment",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        300,
+        800
+      ],
+      "id": "0cacf1ae-d007-4a2c-8316-a8d38d1334e1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "0c68a6c9-f904-4ce7-85f4-0b2f29c974bf",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$binary}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "576bf89b-73e2-47c4-a5c8-38dc5597c30c",
+      "name": "Post Incomming With Attachment ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        880
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {},
+      "id": "53d1b2bb-cc56-4fe2-8402-57dd499fb051",
+      "name": "(In) Attachment",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        500,
+        720
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "f73bef55-4899-45d9-a368-e4f7a24fc3dd",
+      "name": "(In) Text Message",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        500,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "= ** Falha ao baixar anexo ! :: => {{$json[\"payload\"][\"content\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d5af3b76-4205-476c-82a9-b253e9502889",
+      "name": "(In) Prepend error on content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1260,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.error}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "5b58eaab-152f-4d7e-84d7-dd6b0930c86f",
+      "name": "(In) Error On Get Attach ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        980,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.payload.content}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "d3cd4f14-cab0-4c6c-9fc8-433819e698dd",
+      "name": "If Not Empty Content ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        740,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "! \"Algum EMOJI\" | \"Alguma Reação que o sistema não entende ainda ..\""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "38d9050f-52cf-4c33-95b8-e893b368b63c",
+      "name": "Set Custom Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        940,
+        960
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "32ab2d49-bb00-4e0c-8448-df68818d8906",
+      "name": "(In) Text Message Following",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.attachment"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a2a4b866-3b3d-4368-98f1-dd6109fcae5d",
+      "name": "Filter Post To Chatwoot Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Fail Retry \nImportant to retry on fail because if you are using any external storage, it will try to save at this time.\nSo you need to ensure success ...",
+        "height": 347.0509255000625,
+        "width": 258.1602840291324
+      },
+      "id": "fcfd7945-4810-4f0d-a399-0a93d56338f0",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "extra.qphost",
+              "value": "={{ $json.extra.qphost ?? \"http://127.0.0.1:31000\" }}"
+            },
+            {
+              "name": "extra.qptoken",
+              "value": "={{ $json.extra.qptoken ?? $json.extra.identifier }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "96b11bab-93f1-40da-91a2-5ec971a84d11",
+      "name": "Defaults",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.0) Updates\n* fail retry at post incomming message\n\n## Recommendations \n* Remember set timeout to 10 seconds",
+        "height": 201.45401153644474,
+        "width": 467.54452018877896
+      },
+      "id": "8a92ad58-c152-45c4-8190-b8913aa892b9",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -680,
+        560
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Direct Message ?": {
+      "main": [
+        [
+          {
+            "node": "Has Incoming Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepend Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepend Title": {
+      "main": [
+        [
+          {
+            "node": "Has Incoming Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quepasa Download Incoming": {
+      "main": [
+        [
+          {
+            "node": "(In) Error On Get Attach ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Source Payload": {
+      "main": [
+        [
+          {
+            "node": "Direct Message ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Incoming Attachment": {
+      "main": [
+        [
+          {
+            "node": "(In) Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "(In) Text Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Filter Post To Chatwoot Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Incomming With Attachment ?": {
+      "main": [
+        [
+          {
+            "node": "Post Incoming Message Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post Incoming Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(In) Attachment": {
+      "main": [
+        [
+          {
+            "node": "Quepasa Download Incoming",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "(In) Text Message": {
+      "main": [
+        [
+          {
+            "node": "If Not Empty Content ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(In) Prepend error on content": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(In) Error On Get Attach ?": {
+      "main": [
+        [
+          {
+            "node": "(In) Prepend error on content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Not Empty Content ?": {
+      "main": [
+        [
+          {
+            "node": "(In) Text Message Following",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Custom Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Custom Content": {
+      "main": [
+        [
+          {
+            "node": "(In) Text Message Following",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(In) Text Message Following": {
+      "main": [
+        [
+          {
+            "node": "Filter Post To Chatwoot Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Post To Chatwoot Payload": {
+      "main": [
+        [
+          {
+            "node": "Post Incomming With Attachment ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Defaults": {
+      "main": [
+        [
+          {
+            "node": "Filter Source Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 10
+  },
+  "versionId": "66400fe4-a425-4e58-891b-d9b64be23d0f",
+  "id": "1006",
+  "meta": {
+    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+  },
+  "tags": [    
+    {
+      "name": "QUEPASA"
+    },
+    {
+      "name": "CHATWOOT"
+    },
+    {
+      "name": "NOCODELEAKS"
+    }
+  ]
+}

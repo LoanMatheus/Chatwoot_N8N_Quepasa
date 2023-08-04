@@ -1,0 +1,1452 @@
+{
+  "name": "QuepasaInboxControl",
+  "nodes": [
+    {
+      "parameters": {
+        "baseUrl": "={{$json[\"query\"][\"qphost\"]}}",
+        "token": "={{$json[\"query\"][\"qptoken\"]}}",
+        "resource": "webhook",
+        "operation": "setup",
+        "url": "={{ $json.query.n8nhost?.replace(/\\/+$/, '') ?? \"https://\" + $json.headers.host }}/webhook/to-chatwoot",
+        "trackId": "chatwoot",
+        "extraAttributes": {
+          "attribute": [
+            {
+              "key": "identifier",
+              "value": "={{$json[\"query\"][\"identifier\"]}}"
+            },
+            {
+              "key": "cwhost",
+              "value": "={{$json[\"query\"][\"cwhost\"]}}"
+            },
+            {
+              "key": "inbox",
+              "value": "={{$json[\"query\"][\"inbox\"]}}"
+            },
+            {
+              "key": "account",
+              "value": "={{$json[\"body\"][\"account\"][\"id\"]}}"
+            },
+            {
+              "key": "utoken",
+              "value": "={{$json[\"query\"][\"utoken\"]}}"
+            },
+            {
+              "key": "atoken",
+              "value": "={{$json[\"query\"][\"atoken\"]}}"
+            },
+            {
+              "key": "account",
+              "value": "={{$json[\"query\"][\"account\"]}}"
+            },
+            {
+              "key": "qphost",
+              "value": "={{$json[\"query\"][\"qphost\"]}}"
+            },
+            {
+              "key": "qptoken",
+              "value": "={{$json[\"query\"][\"qptoken\"]}}"
+            }
+          ]
+        }
+      },
+      "id": "5ff05bce-7061-4581-86d3-c31c934569bc",
+      "name": "QP - Webhook Update",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        -2500,
+        720
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json[\"query\"][\"qphost\"]}}",
+        "token": "={{$json[\"query\"][\"qptoken\"]}}",
+        "resource": "webhook",
+        "operation": "remove",
+        "url": "=https://{{$json[\"headers\"][\"host\"]}}/webhook/to-chatwoot"
+      },
+      "id": "af25dc68-8377-4dba-841b-cfe6986bf026",
+      "name": "QP - Webhook Remove",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        -2500,
+        900
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$json.content.toLowerCase()}}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "startsWith",
+              "value2": "/webhook update"
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/webhook remove",
+              "output": 1
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/webhook clear",
+              "output": 2
+            }
+          ]
+        }
+      },
+      "id": "df5d6a12-ceb3-4522-a380-d8ea53345da2",
+      "name": "Webhook Methods",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -2860,
+        920
+      ]
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json[\"params\"][\"cwhost\"]}}",
+        "sourceId": "={{$json[\"params\"][\"source_id\"]}}",
+        "operation": "messageCreate",
+        "inboxIdentifier": "={{$json[\"params\"][\"identifier\"]}}",
+        "conversationId": "={{$json[\"params\"][\"conversation_id\"]}}",
+        "content": "={{$json[\"response\"]}}"
+      },
+      "id": "25c803e1-2e47-4e31-ab5e-b7ce67a8f0ae",
+      "name": "ChatWoot",
+      "type": "n8n-nodes-chatwoot.chatwoot",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        1220
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=({{$json[\"success\"]}}): {{$json[\"status\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f35bdd70-b8eb-421b-86dc-2b922a898ee2",
+      "name": "Set Response From Quepasa",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1920,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=!Invalid call, try:\n-----------------------------------------------\n/agentbot\n/info\n/webcallback {destination}\n/webhook {update|remove|clear}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b7cc6383-6680-4fc7-b37d-7c0b21e81e5c",
+      "name": "Set Response From Invalid Start",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1860,
+        2360
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$json.content?.toLowerCase() ?? \"\"}}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "startsWith",
+              "value2": "/webhook"
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/info",
+              "output": 1
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/agentbot",
+              "output": 2
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      },
+      "id": "155b84a4-6cbe-4a57-88bf-d5d4824aa1e0",
+      "name": "Switch Start",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -3280,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body?.event}}",
+              "value2": "message_created"
+            },
+            {
+              "value1": "={{$json.body?.message_type}}",
+              "value2": "outgoing"
+            }
+          ]
+        }
+      },
+      "id": "f5b395c6-9261-4e77-8e78-a2ce070d7166",
+      "name": "If Message Out",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -4560,
+        1320
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "26041976-3978-4d10-9097-50b335e30e7d",
+      "name": "Discarding Not Message Out",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -4140,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.success}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "b2a15ba6-b30b-4396-a975-21c6c9be6003",
+      "name": "IF Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2200,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=! {{$json[\"status\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "82f9eb40-417c-43f3-ba09-5afdaba3b122",
+      "name": "Set Error Response From Quepasa",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1920,
+        1000
+      ]
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json[\"query\"][\"qphost\"]}}",
+        "token": "={{$json[\"query\"][\"qptoken\"]}}",
+        "resource": "information"
+      },
+      "id": "815775f7-c630-4d75-9c59-15ff119484fa",
+      "name": "QP - Info",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        -2860,
+        1280
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.success}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "76325ea4-4b90-441d-bcb3-fa99e003d308",
+      "name": "IF Success1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2500,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "={{$json[\"server\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1c553807-d87e-4966-bd3e-5503ea0cc667",
+      "name": "Set Info Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1920,
+        1260
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "function print(object, level) {\n    var SPACER = '-',\n        NEWLINE = '\\r\\n'\n        result = '';\n\n    level = level || 0;\n    Object.keys(object).forEach(function (key) {\n        var i = level;\n        while (i--) {\n            result += SPACER;\n        }\n        if (typeof object[key] === 'object' && object[key] !== null) {\n            result += NEWLINE + key + ' :: ' + NEWLINE + NEWLINE;\n            result += print(object[key], level + 1);\n            return;\n        }\n        result += key + ': ' + object[key] + NEWLINE;\n\n    });\n    return result;\n}\n\nfor (item of items) {\n  item.json.server = print(item.json.server);\n}\n\nreturn items;"
+      },
+      "id": "ff55f44f-bf2a-487d-8393-f7f01d4f497d",
+      "name": "Json To Idented Text",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -2200,
+        1260
+      ]
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json[\"query\"][\"qphost\"]}}",
+        "token": "={{$json[\"query\"][\"qptoken\"]}}",
+        "resource": "webhook",
+        "operation": "clear"
+      },
+      "id": "aa12dc18-84bf-4dfd-8987-ac9db044bda3",
+      "name": "QP - Webhook Clear",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        -2500,
+        1080
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "139705c2-b8e8-4835-a915-ed029028e09b",
+      "name": "Merge Parameters + Message",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -780,
+        1220
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "cwhost",
+              "value": "={{$json[\"query\"][\"cwhost\"]}}"
+            },
+            {
+              "name": "identifier",
+              "value": "={{$json[\"query\"][\"identifier\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9e3ff1fa-4e6a-4efe-a0aa-9ecf9f144ac0",
+      "name": "Set Basic Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -4420,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "source_id",
+              "value": "={{$json[\"body\"][\"conversation\"][\"contact_inbox\"][\"source_id\"]}}"
+            },
+            {
+              "name": "conversation_id",
+              "value": "={{$json[\"body\"][\"conversation\"][\"id\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "de43a90d-48c7-411f-a34c-3b5831832f04",
+      "name": "Set Parameters From Control Chat",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -4140,
+        1080
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "68b13daf-936a-49cc-89d1-01e747b1eaf8",
+      "name": "Merge Parameters +",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -3220,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "params",
+              "value": "={{$json}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b72c8ab4-6c11-417f-83b0-116ca68d8cc5",
+      "name": "Set Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1420,
+        480
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "a044fc68-0be1-4341-a244-ef42d1cd9588",
+      "name": "NoOp",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -2840,
+        2360
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.response}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "91a7413f-1f1c-4d5e-8267-8f35dbbf50be",
+      "name": "If Reponse Not Empty ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1100,
+        1260
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.content}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{$json.content}}",
+              "operation": "notStartsWith",
+              "value2": "/qrcode"
+            }
+          ]
+        }
+      },
+      "id": "68af8baa-c730-49a5-82a1-93f6b5dfa5b0",
+      "name": "If Body Not Empty",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -3500,
+        1300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "content",
+              "value": "={{$json.body?.content}}"
+            },
+            {
+              "name": "cwhost",
+              "value": "={{$json.query.cwhost}}"
+            },
+            {
+              "name": "account",
+              "value": "={{$json.query.account}}"
+            },
+            {
+              "name": "inbox",
+              "value": "={{$json.query.inbox}}"
+            },
+            {
+              "name": "utoken",
+              "value": "={{$json.query.utoken}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "28b92a6f-75cd-486b-a0ae-2f4e24b3ae2c",
+      "name": "Set Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -3740,
+        1300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "3499cfdb-606c-4007-a77a-7038fe60c8cb",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -4900,
+        1320
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ac9af65e-0a44-44cc-a40e-0b9b6faacaef",
+      "name": "Agent Control",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -2860,
+        1500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.cwhost}}/api/v1/accounts/{{$json.account}}/inboxes/{{$json.inbox}}/set_agent_bot",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.utoken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "agent_bot",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "df62618a-6617-4837-93c7-587579bb415f",
+      "name": "(Agent) Set Inbox Agent Permissions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        -2620,
+        1640
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json?.error?.message??$json?.error}}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "f297d2c8-1b8d-4f65-b6be-667f6ea25167",
+      "name": "(Agent) If Success Set Agent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2420,
+        1640
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "Agent Bot Updated"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "35ce061c-bb2f-4376-8a1d-639b3cc40607",
+      "name": "(Agent)  Set Sucess Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2220,
+        1560
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=! {{$json.status}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b67e81dc-71f5-4a42-8061-8948561e6eb7",
+      "name": "(Agent) Set Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2220,
+        1720
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "ad01f6d1-0dad-4890-b66b-aa42d1e2dc0f",
+      "name": "(Agent) Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -1920,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$json.content?.toLowerCase() ?? \"\"}}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "startsWith",
+              "value2": "/webcallback"
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      },
+      "id": "0ad9a309-b565-4e1c-ade6-f9dd81e4f173",
+      "name": "Switch Start1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -3280,
+        2040
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://endpoints.sufficit.com.br/gateway/chatwoot/inbox",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "identifier",
+              "value": "={{ $json.query.identifier }}"
+            },
+            {
+              "name": "destination",
+              "value": "={{ $json.content.substring(13) }}"
+            },
+            {
+              "name": "contextid",
+              "value": "={{ $env[\"C8Q_SUFFICIT_CONTEXTID\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "41dfae31-3d07-4ecd-8897-561de0291dfa",
+      "name": "Update WebCallBack Destination",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -2660,
+        1920
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://endpoints.sufficit.com.br/gateway/chatwoot/inbox",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "identifier",
+              "value": "={{ $json.query.identifier }}"
+            },
+            {
+              "name": "contextId",
+              "value": "={{ $json.content.substring(13) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9665f91a-1d26-4ddb-a70b-9aaf00f6dcf1",
+      "name": "Update WebCallBack ContextId",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -2660,
+        2120
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.content.substring(13) }}",
+              "operation": "startsWith",
+              "value2": "+"
+            }
+          ]
+        }
+      },
+      "id": "06db7796-2b2e-4a8d-aab0-acf44acb614c",
+      "name": "If Destination Or ContextId",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2860,
+        2020
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.success }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "1efc5cf0-af69-44eb-a629-fac8c92b1978",
+      "name": "If Success Update",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2460,
+        2020
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "={{ $json.message }}:\n  * identifier: {{ $json.data?.identifier }}\n  * destination: {{ $json.data?.destination }}\n  * contextId: {{ $json.data?.contextId }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "087816dd-00d9-4c70-b451-8ed53112982a",
+      "name": "Set Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2260,
+        1920
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=! {{ $json.message ?? $json.error.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b087d373-0d2e-4b9d-8047-79c5a3b78e81",
+      "name": "Set Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2260,
+        2120
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "5c390e4a-7108-41a6-a6e5-5adc3708b125",
+      "name": "NoOp1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -2060,
+        2020
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.1) Recommendations \n* Remember set timeout to 15 seconds \n* string empty for switch",
+        "width": 395
+      },
+      "id": "ccf59cc4-7a1b-47c4-afeb-56e49290d5e6",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -5020,
+        1500
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Methods": {
+      "main": [
+        [
+          {
+            "node": "QP - Webhook Update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "QP - Webhook Remove",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "QP - Webhook Clear",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QP - Webhook Update": {
+      "main": [
+        [
+          {
+            "node": "IF Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QP - Webhook Remove": {
+      "main": [
+        [
+          {
+            "node": "IF Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Response From Quepasa": {
+      "main": [
+        [
+          {
+            "node": "If Reponse Not Empty ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Response From Invalid Start": {
+      "main": [
+        [
+          {
+            "node": "If Reponse Not Empty ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Start": {
+      "main": [
+        [
+          {
+            "node": "Webhook Methods",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "QP - Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agent Control",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch Start1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Message Out": {
+      "main": [
+        [
+          {
+            "node": "Set Parameters From Control Chat",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Discarding Not Message Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Success": {
+      "main": [
+        [
+          {
+            "node": "Set Response From Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Error Response From Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Error Response From Quepasa": {
+      "main": [
+        [
+          {
+            "node": "If Reponse Not Empty ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QP - Info": {
+      "main": [
+        [
+          {
+            "node": "IF Success1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Success1": {
+      "main": [
+        [
+          {
+            "node": "Json To Idented Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Error Response From Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Info Response": {
+      "main": [
+        [
+          {
+            "node": "If Reponse Not Empty ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Json To Idented Text": {
+      "main": [
+        [
+          {
+            "node": "Set Info Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QP - Webhook Clear": {
+      "main": [
+        [
+          {
+            "node": "IF Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Parameters + Message": {
+      "main": [
+        [
+          {
+            "node": "ChatWoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Basic Parameters": {
+      "main": [
+        [
+          {
+            "node": "Merge Parameters +",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Parameters From Control Chat": {
+      "main": [
+        [
+          {
+            "node": "Merge Parameters +",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Parameters +": {
+      "main": [
+        [
+          {
+            "node": "Set Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Parameters": {
+      "main": [
+        [
+          {
+            "node": "Merge Parameters + Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NoOp": {
+      "main": [
+        [
+          {
+            "node": "Set Response From Invalid Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Reponse Not Empty ?": {
+      "main": [
+        [
+          {
+            "node": "Merge Parameters + Message",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "If Body Not Empty": {
+      "main": [
+        [
+          {
+            "node": "Switch Start",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Set Payload": {
+      "main": [
+        [
+          {
+            "node": "If Body Not Empty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "If Message Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Basic Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Control": {
+      "main": [
+        [
+          {
+            "node": "(Agent) Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "(Agent) Set Inbox Agent Permissions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(Agent) Set Inbox Agent Permissions": {
+      "main": [
+        [
+          {
+            "node": "(Agent) If Success Set Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(Agent) If Success Set Agent": {
+      "main": [
+        [
+          {
+            "node": "(Agent)  Set Sucess Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "(Agent) Set Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(Agent)  Set Sucess Response": {
+      "main": [
+        [
+          {
+            "node": "(Agent) Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "(Agent) Set Error Response": {
+      "main": [
+        [
+          {
+            "node": "(Agent) Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "(Agent) Merge": {
+      "main": [
+        [
+          {
+            "node": "If Reponse Not Empty ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Start1": {
+      "main": [
+        [
+          {
+            "node": "If Destination Or ContextId",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        [
+          {
+            "node": "NoOp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update WebCallBack Destination": {
+      "main": [
+        [
+          {
+            "node": "If Success Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update WebCallBack ContextId": {
+      "main": [
+        [
+          {
+            "node": "If Success Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Destination Or ContextId": {
+      "main": [
+        [
+          {
+            "node": "Update WebCallBack Destination",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update WebCallBack ContextId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Success Update": {
+      "main": [
+        [
+          {
+            "node": "Set Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Success Response": {
+      "main": [
+        [
+          {
+            "node": "NoOp1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Error Response": {
+      "main": [
+        [
+          {
+            "node": "NoOp1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NoOp1": {
+      "main": [
+        [
+          {
+            "node": "If Reponse Not Empty ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 15
+  },
+  "versionId": "4fa0b704-fb7d-4e18-a0ea-361ee57db9aa",
+  "id": "1001",
+  "meta": {
+    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+  },
+  "tags": [
+    {
+      "name": "QUEPASA"
+    },
+    {
+      "name": "CHATWOOT"
+    },
+    {
+      "name": "NOCODELEAKS"
+    }
+  ]
+}
